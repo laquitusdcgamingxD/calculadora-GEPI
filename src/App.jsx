@@ -41,7 +41,7 @@ const translations = {
     timeHorizonLabel: 'Plazo de Proyección',
     years: 'Años',
     year: 'Año',
-    reportTitle: 'INFORME GEPI - RESUMEN FINANCIERO',
+    reportTitle: 'INFORME GEPI - PLANIFICACIÓN FINANCIERA',
     dateLabel: 'Fecha',
     newIncome: 'Nuevo ingreso',
     newExpense: 'Nuevo gasto',
@@ -89,7 +89,7 @@ const translations = {
     timeHorizonLabel: 'Projection Timeframe',
     years: 'Years',
     year: 'Year',
-    reportTitle: 'GEPI REPORT - FINANCIAL SUMMARY',
+    reportTitle: 'GEPI REPORT - FINANCIAL PLANNING',
     dateLabel: 'Date',
     newIncome: 'New income',
     newExpense: 'New expense',
@@ -137,7 +137,7 @@ const translations = {
     timeHorizonLabel: 'Horizon d\'Investissement',
     years: 'Ans',
     year: 'An',
-    reportTitle: 'RAPPORT GEPI - RÉSUMÉ FINANCIER',
+    reportTitle: 'RAPPORT GEPI - PLANIFICATION FINANCIÈRE',
     dateLabel: 'Date',
     newIncome: 'Nouveau revenu',
     newExpense: 'Nouvelle dépense',
@@ -161,9 +161,10 @@ export default function App() {
   const [lang, setLang] = useState('es');
   const t = translations[lang];
 
-  // Símbolo de moneda
+  // Símbolo de moneda y Nombre del usuario / reporte
   const [currencySymbol, setCurrencySymbol] = useState('US$');
   const [customCurrency, setCustomCurrency] = useState('');
+  const [reportTitleName, setReportTitleName] = useState('');
   const activeSymbol = customCurrency.trim() !== '' ? customCurrency : currencySymbol;
 
   // 1. ESTADOS DE ENTRADA (Inputs editables)
@@ -292,10 +293,24 @@ export default function App() {
       ? Math.round(((totalInvestedValue - totalContributed) / totalContributed) * 1000) / 10
       : 0;
 
-    // Formato de etiqueta de eje X (Mes o Año/Mes)
-    const label = totalMonths > 24 
-      ? (i % 12 === 0 ? `${i / 12} ${appT.years || 'Años'}` : `M${i}`)
-      : `${appT.month} ${i}`;
+    // Formato de etiqueta amigable para el eje X (meses, años o años y meses)
+    let label = `0 ${appT.month || 'Mes'}`;
+    if (i === 0) {
+      label = `Mes 0`;
+    } else if (i < 12) {
+      label = `${i} ${i === 1 ? (appT.month || 'Mes') : (appT.months || 'Meses')}`;
+    } else {
+      const yearsCount = Math.floor(i / 12);
+      const remainingMonths = i % 12;
+      const yrText = yearsCount === 1 ? (appT.year || 'año') : (appT.years || 'años');
+      
+      if (remainingMonths === 0) {
+        label = `${yearsCount} ${yrText}`;
+      } else {
+        const moText = remainingMonths === 1 ? (appT.month || 'mes') : (appT.months || 'meses');
+        label = `${yearsCount} ${yrText} y ${remainingMonths} ${moText}`;
+      }
+    }
 
     return {
       mes: label,
@@ -325,7 +340,11 @@ export default function App() {
 
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 36px sans-serif';
-    ctx.fillText(reportT.reportTitle, 60, 90);
+    // TÍTULO CAMBIADO A PLANIFICACIÓN FINANCIERA CON NOMBRE OPCIONAL
+    const reportHeading = reportTitleName.trim() !== '' 
+      ? `PLANIFICACIÓN FINANCIERA - ${reportTitleName.trim()}` 
+      : 'PLANIFICACIÓN FINANCIERA';
+    ctx.fillText(reportHeading, 60, 90);
 
     ctx.fillStyle = '#94a3b8';
     ctx.font = '20px sans-serif';
@@ -490,23 +509,33 @@ export default function App() {
       {/* CONTENEDOR PRINCIPAL */}
       <div ref={reportRef} className="max-w-6xl mx-auto space-y-8 bg-slate-950 p-2">
         
-        {/* HEADER, SELECTOR DE MONEDA E IDIOMA */}
-        <header className="flex flex-col md:flex-row justify-between items-center bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl gap-4">
-          <div>
-            <div className="flex items-center gap-3">
-              <span className="bg-emerald-500/10 text-emerald-400 p-2.5 rounded-xl border border-emerald-500/20">
-                <TrendingUp className="w-8 h-8" />
-              </span>
-              <div>
-                <h1 className="text-3xl font-black tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
-                  {t.title}
-                </h1>
-                <p className="text-sm text-slate-400">{t.subtitle}</p>
-              </div>
+        {/* HEADER, SELECTOR DE NOMBRE, MONEDA E IDIOMA */}
+        <header className="flex flex-col lg:flex-row justify-between items-center bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl gap-4">
+          <div className="flex items-center gap-3">
+            <span className="bg-emerald-500/10 text-emerald-400 p-2.5 rounded-xl border border-emerald-500/20">
+              <TrendingUp className="w-8 h-8" />
+            </span>
+            <div>
+              <h1 className="text-3xl font-black tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+                {t.title}
+              </h1>
+              <p className="text-sm text-slate-400">{t.subtitle}</p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-3 bg-slate-950/60 p-3 rounded-xl border border-slate-800 no-print">
+            {/* CASILLA DE NOMBRE / TÍTULO */}
+            <div className="flex items-center gap-2 border-r border-slate-800 pr-3">
+              <User className="w-4 h-4 text-emerald-400" />
+              <input
+                type="text"
+                placeholder="Nombre o Título..."
+                value={reportTitleName}
+                onChange={(e) => setReportTitleName(e.target.value)}
+                className="bg-slate-900 border border-slate-700 text-white rounded-lg px-3 py-1.5 text-xs font-bold focus:outline-none focus:border-emerald-500 w-36 md:w-44"
+              />
+            </div>
+
             {/* SELECTOR DE IDIOMA */}
             <div className="flex items-center gap-2 border-r border-slate-800 pr-3">
               <Globe className="w-4 h-4 text-emerald-400" />
